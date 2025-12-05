@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История запросов - Система подсчета посуды</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .history-container {
+            padding: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .image-cell img {
+            max-width: 100px;
+            max-height: 80px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .image-cell img:hover {
+            transform: scale(2);
+            z-index: 1000;
+            position: relative;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.9em;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📜 История запросов</h1>
+            <p>Все обработанные изображения и результаты подсчета</p>
+            <a href="/" class="back-button">← Вернуться на главную</a>
+        </header>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number">{{ total_images }}</div>
+                <div class="stat-label">Всего изображений</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ total_objects }}</div>
+                <div class="stat-label">Всего объектов</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ (total_objects / total_images if total_images > 0 else 0)|round(1) }}</div>
+                <div class="stat-label">Среднее на изображение</div>
+            </div>
+        </div>
+        
+        <div class="history-container">
+            {% if records %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата и время</th>
+                        <th>Файл</th>
+                        <th>Чашки</th>
+                        <th>Стаканы</th>
+                        <th>Кружки</th>
+                        <th>Всего</th>
+                        <th>Время обработки</th>
+                        <th>Результат</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record[1][:19] }}</td>
+                        <td>{{ record[2] }}</td>
+                        <td>{{ record[3] }}</td>
+                        <td>{{ record[4] }}</td>
+                        <td>{{ record[5] }}</td>
+                        <td><strong>{{ record[6] }}</strong></td>
+                        <td>{{ record[7] }} сек</td>
+                        <td class="image-cell">
+                            <img src="/static/results/{{ record[8] }}" alt="Результат" 
+                                 onclick="openImage(this.src)">
+                        </td>
+                        <td class="action-buttons">
+                            <button class="btn btn-view" 
+                                    onclick="viewResult('{{ record[0] }}')">
+                                👁️ Просмотр
+                            </button>
+                            <button class="btn btn-delete" 
+                                    onclick="deleteRecord('{{ record[0] }}')">
+                                🗑️ Удалить
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>История запросов пуста</p>
+                <p>Вернитесь на главную страницу и загрузите первое изображение!</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <footer>
+            <p>Система подсчета посуды в кофейне | МТУСИ 2025</p>
+            <p>Для очистки всей истории удалите файл database.db</p>
+        </footer>
+    </div>
+
+    <script>
+        function openImage(src) {
+            window.open(src, '_blank');
+        }
+        
+        function viewResult(id) {
+            alert('Просмотр записи ID: ' + id);
+            // Здесь можно реализовать детальный просмотр
+        }
+        
+        async function deleteRecord(id) {
+            if (!confirm('Вы уверены, что хотите удалить эту запись?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/delete/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Запись успешно удалена!');
+                    location.reload();
+                } else {
+                    alert('Ошибка при удалении записи');
+                }
+            } catch (error) {
+                alert('Ошибка сети: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
